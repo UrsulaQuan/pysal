@@ -804,7 +804,7 @@ class LISA_Markov(Markov):
     Any value less than 49 indicates at least one of the LISA end points was
     significant. So for example, the first spatial unit experienced a
     transition of type 11 (LL, LL)  during the last three transition
-    intervals (according to lm.move_types), however, the last three of these
+    intervals (according to lm.move_types), however, the last three
     transitions involved insignificant LISAS in both the start and ending year
     of each transition.
 
