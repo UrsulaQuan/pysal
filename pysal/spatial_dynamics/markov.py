@@ -519,7 +519,7 @@ class Spatial_Markov:
         d = np.multiply((o - e), (o - e))
         d = d / e
         chi2 = d.sum()
-        pvalue = 1 - stats.chi2.cdf(chi2, k - 1)
+        pvalue = 1 - stats.chi2.cdf(np.real(chi2), k - 1)
         return (chi2, pvalue, k - 1)
 
     def _chi2_test(self):
