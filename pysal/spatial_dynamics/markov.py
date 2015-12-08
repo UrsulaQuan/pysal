@@ -431,19 +431,46 @@ class Spatial_Markov:
         self.LR_p_value = ht.LR_p_value
         self.dof_hom = ht.dof
 
+        self.dom_obs = self.dom_test(self.P)
+
         if permutations:
             nrp = np.random.permutation
             counter = 0
             x2_realizations = np.zeros((permutations, 1))
+            n_k = self.P.shape[0]
+            dom_realizations = np.zeros((permutations, n_k * (n_k-1)/2, 1))
+            dom_larger = np.zeros((n_k * (n_k-1)/2, 1))
             for perm in range(permutations):
                 T, P, ss, F = self._calc(nrp(y), w, classes, k=k)
+                dom_realizations[perm] = self.dom_test(P)
                 x2 = [chi2(T[i], self.transitions)[0] for i in range(k)]
                 x2s = sum(x2)
                 x2_realizations[perm] = x2s
                 if x2s >= self.x2:
                     counter += 1
+                for r, stat in enumerate(dom_realizations[perm]):
+                    if stat >= self.dom_obs[r]:
+                        dom_larger[r] += 1
+
             self.x2_rpvalue = (counter + 1.0) / (permutations + 1.)
             self.x2_realizations = x2_realizations
+            self.dom_realizations = dom_realizations
+            self.dom_pvalues = dom_larger / (permutations + 1.)
+
+
+
+    # dominance test
+    def dom_test(self, P):
+        n_k = P.shape[0]  # number of conditioning classes
+        dom = np.zeros((n_k * (n_k-1)/2,1),float)
+        ij = 0
+        for i, p_i in enumerate(P[:n_k-1]):
+            for j in xrange(i+1, n_k):
+                p_j = self.P[j]
+                dom[ij] = dominance(p_j, p_i)[-1]
+                ij += 1
+        return dom
+
 
     def _calc(self, y, w, classes, k):
         # lag markov
@@ -1055,6 +1082,15 @@ class LISA_Markov(Markov):
 
         else:
             return None
+
+
+def dominance(p1, p2):
+    k = p1.shape[0]
+    T = np.tri(k).T
+    p1T = np.dot(p1, T)
+    p2T = np.dot(p2, T)
+    d = p2T - p1T
+    return p1T, p2T, d, d.sum()
 
 
 def kullback(F):
