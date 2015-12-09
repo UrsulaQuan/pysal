@@ -13,10 +13,11 @@ class Geometry(object):
     """
     Abstract Class for PySAL Geometry Types
     """
-    def __init__(self, coordinates, bbox=None):
+    def __init__(self, coordinates, bbox=None, rep_point=None):
         self.coordinates = coordinates
-        self.setbbox(bbox)
+        self.set_bbox(bbox)
         self.type = 'Geometry'
+        self.set_rep_point(rep_point)
 
     def __str__(self):
         return self.type + ': ' + str(self.coordinates)
@@ -24,16 +25,29 @@ class Geometry(object):
     def __repr__(self):
         return '{0}'.format(object.__repr__(self))
 
-    def getbbox(self):
+    def get_bbox(self):
         return self.__bbox
 
-    def setbbox(self, value):
+    def set_bbox(self, value):
         if value is None:
             value = self.build_bbox()
         self.__bbox = value
-    bbox = property(getbbox, setbbox)
+    bbox = property(get_bbox, set_bbox)
 
     def build_bbox(self):
+        raise NotImplementedError('Must implement in subclass')
+
+    def set_rep_point(self, value=None):
+        if value is None:
+            value = self.do_rep_point()
+        self.__rep_point = value
+
+    def get_rep_point(self):
+        return self.__rep_point
+
+    rep_point = property(get_rep_point, set_rep_point)
+
+    def do_rep_point(self):
         raise NotImplementedError('Must implement in subclass')
 
 
@@ -72,6 +86,12 @@ class Polygon(Geometry):
             y1 = max(t, y1)
         return [x0, y0, x1, y1]
 
+    def do_rep_point(self):
+        l, b, t, r = self.bbox
+        x = (l + r) / 2.
+        y = (t + b) / 2.
+        return (x, y)
+
 
 class MultiPolygon(Geometry):
     """
@@ -88,8 +108,8 @@ class MultiPolygon(Geometry):
         self.type = 'MultiPolygon'
 
     def __str__(self):
-        npolygons = len(self.coordinates)
-        return '{0}: {1} Polygon(s)'.format(self.type, npolygons)
+        n_polygons = len(self.coordinates)
+        return '{0}: {1} Polygon(s)'.format(self.type, n_polygons)
 
     def build_bbox(self):
         x0 = y0 = np.Infinity
@@ -125,8 +145,8 @@ class MultiLineString(Geometry):
     def build_bbox(self):
         x0 = y0 = np.Infinity
         x1 = y1 = -np.Infinity
-        for lineString in self.coordinates:
-            l, b, r, t = LineString(lineString).bbox
+        for line_string in self.coordinates:
+            l, b, r, t = LineString(line_string).bbox
             x0 = min(l, x0)
             y0 = min(b, y0)
             x1 = max(r, x1)
@@ -155,17 +175,17 @@ class MultiPoint(Geometry):
         maxc = m.max(axis=0).tolist()
         return minc+maxc
 
-geometryDispatcher = {}
-geometryDispatcher[u'Point'] = Point
-geometryDispatcher[u'Polygon'] = Polygon
-geometryDispatcher[u'LineString'] = LineString
-geometryDispatcher[u'MultiPoint'] = MultiPoint
-geometryDispatcher[u'MultiPolygon'] = MultiPolygon
-geometryDispatcher[u'MultiLineString'] = MultiLineString
+geometry_dispatcher = {}
+geometry_dispatcher[u'Point'] = Point
+geometry_dispatcher[u'Polygon'] = Polygon
+geometry_dispatcher[u'LineString'] = LineString
+geometry_dispatcher[u'MultiPoint'] = MultiPoint
+geometry_dispatcher[u'MultiPolygon'] = MultiPolygon
+geometry_dispatcher[u'MultiLineString'] = MultiLineString
 
 
 class FeatureCollection(object):
-    def __init__(self, file_path, idVariable=None):
+    def __init__(self, file_path, id_variable=None):
         """
         FeatureCollection extension of geojson FC for handling internal data in
         PySAL
@@ -175,7 +195,7 @@ class FeatureCollection(object):
         source: file path or json string
                 input data
 
-        idVariable: int
+        id_variable: int
                 Name of feature property that is used for spatial joins,
                 sub-setting, and sorting of features
 
@@ -188,78 +208,77 @@ class FeatureCollection(object):
             ft = feature['geometry']['type']
             fc = feature['geometry']['coordinates']
             f = {}
-            f['geometry'] = geometryDispatcher[ft](fc)
+            f['geometry'] = geometry_dispatcher[ft](fc)
             f['properties'] = feature['properties']
             features[i] = f
             self.n_features += 1
         self.features = features
+        self.id_variable = id_variable
 
-        self.idVariable = idVariable
-
-    def getPropertyTypes(self):
+    def get_property_types(self):
         propertyTypes = {}
         for key in self.features[0]['properties']:
             propertyTypes[key] = type(self.features[0]['properties'][key])
         return propertyTypes
 
-    def getPropertiesAsLists(self, properties):
+    def get_properties_as_lists(self, properties):
         a = []
         for i in xrange(self.n_features):
             f = self.features[i]['properties']
             a.append([f[p] for p in properties])
         return a
 
-    def getPropertiesAsArray(self, properties):
-        return np.array(self.getPropertiesAsLists(properties))
+    def get_properties_as_array(self, properties):
+        return np.array(self.get_properties_as_lists(properties))
 
-    def getGeometryCollection(self):
-        sf = self.features
-        return (sf[f]['geometry'].coordinates for f in sf)
+    def get_geometry_coordinates(self):
+        fs = self.features.itervalues()
+        return [f['geometry'].coordinates for f in fs]
 
     @property
-    def idVariable(self):
-        return self.__idVariable
+    def id_variable(self):
+        return self.__id_variable
 
-    @idVariable.setter
-    def idVariable(self, property):
-        if property is None:
-            self.__idVariable = property
-        elif self.is_unique(self.getPropertiesAsArray([property])):
-            self.__idVariable = property
+    @id_variable.setter
+    def id_variable(self, property_name):
+        if property_name is None:
+            self.__id_variable = property_name
+        elif self.is_unique(self.get_properties_as_array([property_name])):
+            self.__id_variable = property_name
         else:
-            msg = "{0} is not uniquely valued. ".format(property)
-            msg = "{0} Cannot be used as idVariable".format(msg)
+            msg = "{0} is not uniquely valued. ".format(property_name)
+            msg = "{0} Cannot be used as id_variable".format(msg)
             warnings.warn(msg)
 
-    def getIdVariableOrder(self):
-        return self.getPropertiesAsArray([self.__idVariable])
+    def get_id_variable_order(self):
+        return self.get_properties_as_array([self.__id_variable])
 
-    def getFeatureIds(self, args):
+    def get_feature_ids(self, args):
         """
-        Find the feature ids for features with idVariables matching args
+        Find the feature ids for features with id_variables matching args
 
         Arguments
         ---------
         args: list
-              values that idVariable matches on
+              values that id_variable matches on
 
         Returns
         -------
         _  :  list
               feature ids
         """
-        idOrder = self.getIdVariableOrder().flatten().tolist()
+        idOrder = self.get_id_variable_order().flatten().tolist()
         ids = [idOrder.index(v) for v in args]
         return ids
 
-    def getFeatures(self, args=None):
+    def get_features(self, args=None):
         """
-        Return features matching on idVariable for arg
+        Return features matching on id_variable for arg
 
         Arguments
         ---------
         args: list
-              values that idVariable is to be matched on. If args is None, all
+              values that id_variable is to be matched on. If args is None, all
               features are returned
 
         Returns
@@ -270,14 +289,14 @@ class FeatureCollection(object):
         """
 
         if args:
-            ids = self.getFeatureIds(args)
+            ids = self.get_feature_ids(args)
         else:
             ids = xrange(self.n_features)
         return (self.features[i] for i in ids)
 
-    def getGeometries(self, args=None):
+    def get_geometries(self, args=None):
         if args:
-            ids = self.getFeatureIds(args)
+            ids = self.get_feature_ids(args)
         else:
             ids = xrange(self.n_features)
         return (self.features[i]['geometry'] for i in ids)
@@ -295,7 +314,7 @@ class FeatureCollection(object):
         else:
             return False
 
-    def saveAsGeoJson(self, fileName="Untiled.geojson"):
+    def save_as_geojson(self, fileName="Untiled.geojson"):
         d = {}
         d["type"] = "FeatureCollection"
         d['features'] = []
@@ -310,3 +329,15 @@ class FeatureCollection(object):
             d['features'].append(f)
         with open(fileName, 'w') as out:
             json.dump(d, out)
+
+    def get_rep_points(self):
+        """
+        Get representative points for all feature geometries
+
+        Returns
+        -------
+        _  : array (n x k)
+             each row is the representative point for a feature geometry
+        """
+        fit = self.features.iteritmes()
+        return np.array([f['geometry'].representative_point for i, f in fit])
