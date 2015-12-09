@@ -2,12 +2,7 @@ import numpy as np
 import json
 import warnings
 
-
-def ring_bbox(ring):
-    xs = [c[0] for c in ring]
-    ys = [c[1] for c in ring]
-    return min(xs), min(ys), max(xs), max(ys)
-
+from ops import ring_bbox, ring_centroid
 
 class Geometry(object):
     """
@@ -16,7 +11,6 @@ class Geometry(object):
     def __init__(self, coordinates, bbox=None, rep_point=None):
         self.coordinates = coordinates
         self.set_bbox(bbox)
-        self.type = 'Geometry'
         self.set_rep_point(rep_point)
 
     def __str__(self):
@@ -64,7 +58,7 @@ class Polygon(Geometry):
                    subsequent rings (if any) are holes
         """
         super(Polygon, self).__init__(coordinates)
-        self.type = 'Polygon'
+        self.__centroid = None
 
     def __str__(self):
         nrings = len(self.coordinates)
@@ -86,11 +80,38 @@ class Polygon(Geometry):
             y1 = max(t, y1)
         return [x0, y0, x1, y1]
 
-    def do_rep_point(self):
-        l, b, t, r = self.bbox
-        x = (l + r) / 2.
-        y = (t + b) / 2.
-        return (x, y)
+    @property
+    def centroid(self):
+        if self.__centroid is None:
+            self.__centroid = ring_centroid(self.coordinates[0])
+        return self.__centroid
+
+    def do_rep_point(self, method='bbc'):
+        """
+        determine representative point
+
+        Arguments
+        ---------
+        method: string
+                bbc: center of bounding box
+                contained: point will be within exterior ring, not in hole
+                centroid: center of mass
+        """
+
+        if method == 'bbc':
+            # center of bbox
+            l, b, t, r = self.bbox
+            x = (l + r) / 2.
+            y = (t + b) / 2.
+            return (x, y)
+        elif method.lower() == 'contained':
+            # within exterior polygon, not in hole
+            raise NotImplementedError
+        elif method.lower() == 'centroid':
+            # centroid of exterior polygon
+            return self.__centroid
+        else:
+            raise ValueError('method not supported')
 
 
 class MultiPolygon(Geometry):
@@ -131,7 +152,6 @@ class MultiPolygon(Geometry):
 class LineString(Geometry):
     def __init__(self, coordinates):
         super(LineString, self).__init__(coordinates)
-        self.type = "LineString"
 
     def build_bbox(self):
         return ring_bbox(self.coordinates)
@@ -140,7 +160,6 @@ class LineString(Geometry):
 class MultiLineString(Geometry):
     def __init__(self, coordinates):
         super(MultiLineString, self).__init__(coordinates)
-        self.type = "MultiLineString"
 
     def build_bbox(self):
         x0 = y0 = np.Infinity
@@ -157,7 +176,6 @@ class MultiLineString(Geometry):
 class Point(Geometry):
     def __init__(self, coordinates):
         super(Point, self).__init__(coordinates)
-        self.type = "Point"
 
     def build_bbox(self):
         return self.coordinates
@@ -166,7 +184,6 @@ class Point(Geometry):
 class MultiPoint(Geometry):
     def __init__(self, coordinates):
         super(MultiPoint, self).__init__(coordinates)
-        self.type = "MultiPoint"
 
     def build_bbox(self):
         # assume all points have same number of coordinates

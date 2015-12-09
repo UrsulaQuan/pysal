@@ -41,3 +41,26 @@ def asShape(obj):
     else:
         raise NotImplementedError(
             "%s is not supported at this time." % geo_type)
+
+def ring_bbox(ring):
+    xs = [c[0] for c in ring]
+    ys = [c[1] for c in ring]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def ring_centroid(ring):
+    x = [v[0] for v in ring]
+    y = [v[1] for v in ring]
+    n = len(x)
+    a = 0.0  # area
+    for i in xrange(n-1):
+        a += (x[i] * y[i+1] - x[i+1] * y[i])
+    a /= 2.0
+    cx = cy = 0.0
+    for i in xrange(n-1):
+        f = (x[i] * y[i + 1] - x[i + 1] * y[i])
+        cx += (x[i] + x[i + 1]) * f
+        cy += (y[i] + y[i + 1]) * f
+    cx = 1.0 / (6 * a) * cx
+    cy = 1.0 / (6 * a) * cy
+    return (cx, cy)
