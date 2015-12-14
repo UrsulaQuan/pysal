@@ -101,3 +101,17 @@ pysal/examples/snow_maps/soho_graph.prj
 pysal/examples/snow_maps/soho_graph.qpj
 pysal/examples/snow_maps/soho_graph.shp
 pysal/examples/snow_maps/soho_graph.shx
+
+../.ropeproject/
+cg/.ropeproject/
+contrib/viz/b719.ipynb
+core/.ropeproject/
+core/IOHandlers/.ropeproject/
+core/IOHandlers/b719.ipynb
+core/IOHandlers/geojson.ipynb
+core/dataframe.ipynb
+core/dataframe.py
+examples/burkitt/burkitt.geojson
+points/
+spatial_dynamics/.ropeproject/
+spatial_dynamics/markov_tests.ipynb
