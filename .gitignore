@@ -1,3 +1,4 @@
+.rope*
 *.py[cod]
 *.bak
 .ipynb_checkpoints/
@@ -103,15 +104,15 @@ pysal/examples/snow_maps/soho_graph.shp
 pysal/examples/snow_maps/soho_graph.shx
 
 ../.ropeproject/
-cg/.ropeproject/
-contrib/viz/b719.ipynb
-core/.ropeproject/
-core/IOHandlers/.ropeproject/
-core/IOHandlers/b719.ipynb
-core/IOHandlers/geojson.ipynb
-core/dataframe.ipynb
-core/dataframe.py
-examples/burkitt/burkitt.geojson
-points/
-spatial_dynamics/.ropeproject/
-spatial_dynamics/markov_tests.ipynb
+pysal/cg/.ropeproject/
+pysal/contrib/viz/b719.ipynb
+pysal/core/.ropeproject/
+pysal/core/IOHandlers/.ropeproject/
+pysal/core/IOHandlers/b719.ipynb
+pysal/core/IOHandlers/geojson.ipynb
+pysal/core/dataframe.ipynb
+pysal/core/dataframe.py
+pysal/examples/burkitt/burkitt.geojson
+pysal/points/
+pysal/spatial_dynamics/.ropeproject/
+pysal/spatial_dynamics/markov_tests.ipynb
