@@ -432,6 +432,7 @@ class Spatial_Markov:
         self.dof_hom = ht.dof
 
         self.dom_obs = self.dom_test(self.P)
+        self.dom_joint_obs = self.dom_obs.sum()
 
         if permutations:
             nrp = np.random.permutation
@@ -440,9 +441,11 @@ class Spatial_Markov:
             n_k = self.P.shape[0]
             dom_realizations = np.zeros((permutations, n_k * (n_k-1)/2, 1))
             dom_larger = np.zeros((n_k * (n_k-1)/2, 1))
+            dom_joint = np.zeros((permutations, 1))
             for perm in range(permutations):
                 T, P, ss, F = self._calc(nrp(y), w, classes, k=k)
                 dom_realizations[perm] = self.dom_test(P)
+                dom_joint[perm] = dom_realizations[perm].sum()
                 x2 = [chi2(T[i], self.transitions)[0] for i in range(k)]
                 x2s = sum(x2)
                 x2_realizations[perm] = x2s
@@ -456,13 +459,15 @@ class Spatial_Markov:
             self.x2_realizations = x2_realizations
             self.dom_realizations = dom_realizations
             self.dom_pvalues = dom_larger / (permutations + 1.)
+            joint_larger = (dom_joint >= self.dom_joint_obs).sum()
+            self.dom_joint_pvalue = (joint_larger + 1.0) / (permutations + 1.)
 
 
 
     # dominance test
     def dom_test(self, P):
         n_k = P.shape[0]  # number of conditioning classes
-        dom = np.zeros((n_k * (n_k-1)/2,1),float)
+        dom = np.zeros((n_k * (n_k-1)/2, 1), float)
         ij = 0
         for i, p_i in enumerate(P[:n_k-1]):
             for j in xrange(i+1, n_k):
