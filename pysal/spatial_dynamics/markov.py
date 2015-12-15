@@ -462,10 +462,23 @@ class Spatial_Markov:
             joint_larger = (dom_joint >= self.dom_joint_obs).sum()
             self.dom_joint_pvalue = (joint_larger + 1.0) / (permutations + 1.)
 
-
-
     # dominance test
     def dom_test(self, P):
+        """
+        Tests for stochastic dominance
+
+        Arguments
+        ---------
+        P:  array (k, k, k)
+            Tests if stochastic dominance holds between all matrix P[j] and
+            P[i] where j>i
+
+
+        Returns
+        -------
+        dom: array (k(k-1)/2,1)
+            Values of dominance statistic for all pairwise tests
+        """
         n_k = P.shape[0]  # number of conditioning classes
         dom = np.zeros((n_k * (n_k-1)/2, 1), float)
         ij = 0
@@ -475,7 +488,6 @@ class Spatial_Markov:
                 dom[ij] = dominance(p_j, p_i)[-1]
                 ij += 1
         return dom
-
 
     def _calc(self, y, w, classes, k):
         # lag markov
@@ -1090,6 +1102,32 @@ class LISA_Markov(Markov):
 
 
 def dominance(p1, p2):
+    """
+    Test if the matrix p1 stochastically dominates p2
+
+    Arguments
+    ---------
+    p1: array (k, k)
+        transition probability matrix
+
+    p2: array (k, k)
+        transition probability matrix
+
+    Returns
+    -------
+    p1T: array (k, k)
+         cumulative transition probability matrix
+
+    p2T: array (k, k)
+         cumulative transition probability matrix
+
+    d:   array (k,k)
+         difference in cumulative probability matrices
+
+    d.sum(): float
+         total difference in cumulative probabilties
+
+    """
     k = p1.shape[0]
     T = np.tri(k).T
     p1T = np.dot(p1, T)
