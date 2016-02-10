@@ -176,13 +176,13 @@ class Kernel(W):
     Attributes
     ----------
     weights : dict
-	      Dictionary keyed by id with a list of weights for each neighbor
+              Dictionary keyed by id with a list of weights for each neighbor
 
     neighbors : dict
-		of lists of neighbors keyed by observation id
+                of lists of neighbors keyed by observation id
 
     bandwidth : array
- 		array of bandwidths
+                array of bandwidths
 
     Examples
     --------
@@ -344,7 +344,7 @@ class Kernel(W):
         for i, nids in enumerate(self.neigh):
             di, ni = kdtq(self.data[i], k=len(nids))
             if not isinstance(di, np.ndarray):
-            	di = np.asarray([di] * len(nids))
+                di = np.asarray([di] * len(nids))
                 ni = np.asarray([ni] * len(nids))
             zi = np.array([dict(zip(ni, di))[nid] for nid in nids]) / bw[i]
             z.append(zi)
@@ -398,10 +398,10 @@ class DistanceBand(W):
     Attributes
     ----------
     weights : dict
-	      of neighbor weights keyed by observation id
+              of neighbor weights keyed by observation id
 
     neighbors : dict
-		of neighbors keyed by observation id
+                of neighbors keyed by observation id
 
     Examples
     --------
