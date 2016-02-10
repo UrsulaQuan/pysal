@@ -1,3 +1,4 @@
+
 def asPolygonCollection(collection, **kwargs):
     """
     Construct a PolygonCollection from an arbitrary iterable of shapes.
@@ -8,8 +9,8 @@ def asPolygonCollection(collection, **kwargs):
     if isinstance(collection, PolygonCollection):
         out = collection
     elif isinstance(collection, dict):
-        #if we have a standardized geojson handler, then we could check if this
-        #is geojson FeatureCollection or GeometryCollection and pass the handler
+        # if we have a standardized geojson handler, then we could check if this
+        # is geojson FeatureCollection or GeometryCollection and pass the handler
         collection = {k:asShape(v) for k,v in diter(collection)}
         out = PolygonCollection(collection, **kwargs)
     else:
@@ -64,3 +65,103 @@ def ring_centroid(ring):
     cx = 1.0 / (6 * a) * cx
     cy = 1.0 / (6 * a) * cy
     return (cx, cy)
+
+
+def bbox_overlap(A, B):
+    """
+    Test if two bounding boxes overlap
+
+    Arguments
+    ---------
+    A, B: list of [left, bottom, right, top]
+    """
+    l = 0
+    b = 1
+    r = 2
+    t = 3
+    if A[b] > B[t] or A[t] < B[b] or A[r] < B[l] or A[l] > B[r]:
+        return False
+    else:
+        return True
+
+def _queen(ring1, ring2):
+    common_vertices = [v for v in ring1 if v in ring2]
+    if common_vertices:
+        return True
+    return False
+
+
+def _rook(ring1, ring2):
+    n1 = len(ring1)
+    n2 = len(ring2)
+    edges1 = [sorted(ring1[l:l+2]) for l in range(n1-1)]
+    edges2 = [sorted(ring2[l:l+2]) for l in range(n2-1)]
+    common_edges = [e for e in edges1 if e in edges2]
+    if common_edges:
+        return True
+    return False
+
+def contiguous(g1, g2, criterion='QUEEN'):
+
+    if type(g1) != type(g2):
+        raise ValueError('Geometries must be of same type.')
+    elif not bbox_overlap(g1.bbox, g2.bbox):
+        # bounding box containing all g1 rings not overlapping that of g2
+        return False
+    else:
+        criterion = criterion.lower()
+        # check if the bounding boxes for any rings in g1 overlap with any rings in g2
+        overlap = False
+        if g1.type == 'Polygon':
+            # find all pairs where a ring from g1 and a ring from g2 have overlapping bbs
+            pairs = []
+            for i, bbox1 in enumerate(g1.bboxes):
+                for j, bbox2 in enumerate(g2.bboxes):
+                    if bbox_overlap(bbox1, bbox2):
+                        overlap=True
+                        pairs.append((i,j))
+            if overlap:
+                # search overlapping pairs and the first (if any) neighbor pair
+                for pair in pairs:
+                    i, j = pair
+                    pi = g1.coordinates[i]
+                    pj = g2.coordinates[j]
+                    if _queen(pi, pj):
+                        # queen is a necessary condition for rook
+                        if criterion == 'queen':
+                            return True
+                        else:
+                            return _rook(pi, pj)
+                return False
+            else:
+                return False
+
+        elif g1.type == 'MultiPolygon':
+            pairs = []
+            overlap = False
+            for i, pi in enumerate(g1.bboxes):
+                for ii, bi in enumerate(pi):
+                    for j, pj in enumerate(g2.bboxes):
+                        for jj, bj in enumerate(pj):
+                            if bbox_overlap(bi, bj):
+                                overlap = True
+                                pair = (i,ii,j,jj)
+                                pairs.append(pair)
+
+            if overlap:
+                for pair in pairs:
+                    i, ii, j, jj = pair
+                    pi = g1.coordinates[i][ii]
+                    pj = g2.coordinates[j][jj]
+                    if _queen(pi, pj):
+                        if criterion == 'queen':
+                            return  True
+                        else:
+                            return _rook(pi, pj)
+                return False
+            else:
+                return False
+        else:
+            return False
+
+

@@ -2,7 +2,8 @@ import numpy as np
 import json
 import warnings
 
-from ops import ring_bbox, ring_centroid
+
+from ops import ring_bbox, ring_centroid, contiguous
 
 class Geometry(object):
     """
@@ -12,6 +13,7 @@ class Geometry(object):
         self.coordinates = coordinates
         self.set_bbox(bbox)
         self.set_rep_point(rep_point)
+        self.type = 'Geometry'
 
     def __str__(self):
         return self.type + ': ' + str(self.coordinates)
@@ -59,6 +61,7 @@ class Polygon(Geometry):
         """
         super(Polygon, self).__init__(coordinates)
         self.__centroid = None
+        self.type = 'Polygon'
 
     def __str__(self):
         nrings = len(self.coordinates)
@@ -148,10 +151,39 @@ class MultiPolygon(Geometry):
             self.bboxes.append(pbbox)
         return [x0, y0, x1, y1]
 
+    def do_rep_point(self, method='bbc'):
+        """
+        determine representative point
+
+        Arguments
+        ---------
+        method: string
+                bbc: center of bounding box
+                contained: point will be within exterior ring, not in hole
+                centroid: center of mass
+        """
+
+        if method == 'bbc':
+            # center of bbox
+            l, b, t, r = self.bbox
+            x = (l + r) / 2.
+            y = (t + b) / 2.
+            return (x, y)
+        elif method.lower() == 'contained':
+            # within exterior polygon, not in hole
+            raise NotImplementedError
+        elif method.lower() == 'centroid':
+            # centroid of exterior polygon
+            return self.__centroid
+        else:
+            raise ValueError('method not supported')
+
+
 
 class LineString(Geometry):
     def __init__(self, coordinates):
         super(LineString, self).__init__(coordinates)
+        self.type = 'LineString'
 
     def build_bbox(self):
         return ring_bbox(self.coordinates)
@@ -160,6 +192,7 @@ class LineString(Geometry):
 class MultiLineString(Geometry):
     def __init__(self, coordinates):
         super(MultiLineString, self).__init__(coordinates)
+        self.type = 'MultiLineString'
 
     def build_bbox(self):
         x0 = y0 = np.Infinity
@@ -176,6 +209,7 @@ class MultiLineString(Geometry):
 class Point(Geometry):
     def __init__(self, coordinates):
         super(Point, self).__init__(coordinates)
+        self.type = 'Point'
 
     def build_bbox(self):
         return self.coordinates
@@ -184,6 +218,7 @@ class Point(Geometry):
 class MultiPoint(Geometry):
     def __init__(self, coordinates):
         super(MultiPoint, self).__init__(coordinates)
+        self.type = 'MultiPoint'
 
     def build_bbox(self):
         # assume all points have same number of coordinates
@@ -356,5 +391,5 @@ class FeatureCollection(object):
         _  : array (n x k)
              each row is the representative point for a feature geometry
         """
-        fit = self.features.iteritmes()
-        return np.array([f['geometry'].representative_point for i, f in fit])
+        return np.array([f['geometry'].rep_point for i, f in self.features.iteritems()])
+
