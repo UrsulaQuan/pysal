@@ -13,49 +13,6 @@ from pysal.contrib.viz.color import qualitative, sequential, diverging
 from pysal.contrib.viz.color import get_color_map
 
 
-def get_color_map_b2m(name='BuGn', cmtype='sequential', k=5,
-                      color_encoding='hexc'):
-
-    """
-    DEPRECATED!!!
-
-    Get a brewer colormap from `brewer2mpl`
-
-    Arguments
-    ---------
-
-    name:   string
-            colormap name
-
-    cmtype: string
-            colormap scale type  [sequential, diverging, qualitative]
-
-    k:  int
-        number of classes
-
-    color_encoding: string
-                    encoding of colors [hexc, rgb, mpl, mpl_colormap]
-                    hex: list of hex strings
-                    rgb: list of RGB 0-255 triplets
-                    mpl: list of RGB 0-1 triplets as used by matplotlib
-                    mpl_colormap: matplotlib color map
-
-    Returns
-
-    colors:  color map in the specified color_encoding
-
-    """
-    encs = {'hexc': 'hex_colors',
-            'rgb': 'colors',
-            'mpl': 'mpl_colors',
-            'mpl_colormap': 'mpl_colormap'}
-    try:
-        bmap = brewer2mpl.get_map(name, cmtype, k)
-        colors = getattr(bmap, encs[color_encoding.lower()])
-        return colors
-    except:
-        print('Color map not found: ', name, cmtype, k)
-
 ctypes = (sequential, diverging, qualitative)
 color_display_types = {}
 for ctype in ctypes:
