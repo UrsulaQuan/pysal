@@ -5,19 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colors as mpc
 
-try:
-    import brewer2mpl
-    from brewer2mpl import qualitative as b2m_qualitative
-    from brewer2mpl import sequential as b2m_sequential
-    from brewer2mpl import diverging as b2m_diverging
-except:
-    print('brewer2mpl  not installed. Functionality '
-          'related to it will not work')
-
 from ipywidgets import Dropdown, RadioButtons,  HBox, interact
 from IPython.display import display
 from pysal.contrib.viz import mapping as maps
 from pysal.contrib.viz.color import get_maps_by_type
+from pysal.contrib.viz.color import qualitative, sequential, diverging
+from pysal.contrib.viz.color import get_color_map
 
 
 def get_color_map_b2m(name='BuGn', cmtype='sequential', k=5,
@@ -63,16 +56,17 @@ def get_color_map_b2m(name='BuGn', cmtype='sequential', k=5,
     except:
         print('Color map not found: ', name, cmtype, k)
 
-# get maps for each ctype and default k=5 for populating display options
-ctypes = (b2m_sequential, b2m_diverging, b2m_qualitative)
+ctypes = (sequential, diverging, qualitative)
 color_display_types = {}
 for ctype in ctypes:
     cmaps = get_maps_by_type(ctype)
-    ctype_name = ctype.__name__.split(".")[1]
+    ctype_name = ctype.__name__.split(".")[-1]
     displays = {}
     for cmap in cmaps:
-        c = get_color_map_b2m(cmtype=ctype_name, name=cmap)
-        displays[cmap] = c
+        cmap = cmap.split("_")[0]
+        if cmap not in displays:
+            c = get_color_map(cmtype=ctype_name, name=cmap)
+            displays[cmap] = c
     color_display_types[ctype_name] = displays
 
 
