@@ -1,3 +1,18 @@
+"""
+choroBrewer: Choropleth Map Design in Python
+
+
+Dependencies
+------------
+
+- pysal 1.11.2+ (branch  https://github.com/sjsrey/pysal/tree/choroBrewer)
+- palettable
+- matplotlib
+- pandas
+
+
+"""
+__author__ = "Sergio Rey <sjsrey@gmail.com>"
 
 get_ipython().magic(u'matplotlib inline')
 
