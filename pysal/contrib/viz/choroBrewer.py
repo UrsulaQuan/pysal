@@ -19,6 +19,7 @@ get_ipython().magic(u'matplotlib inline')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colors as mpc
+import pysal as ps
 
 from ipywidgets import Dropdown, RadioButtons,  HBox, interact
 from IPython.display import display
@@ -111,3 +112,7 @@ def choro(gd, col, show_cmaps=True, fig_size=(6, 6)):
             pcmaps(data_type.value, i)
         maps.geoplot(gd, col, k=int(k_dd.value), palette=str(cmap_dd.value),
                      figsize=fig_size)
+
+        
+gd = ps.pdio.read_files(ps.examples.get_path('south.shp'))
+choro(gd, 'HR90')
